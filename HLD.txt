@@ -1,0 +1,263 @@
+# STAGEPASS – HIGH LEVEL DESIGN (HLD)
+
+# Full-Stack QR Based Event Ticketing Platform
+
+# Tech Stack: Next.js (Frontend + Backend)
+
+============================================================
+
+1. SYSTEM OVERVIEW
+
+StagePass is a full-stack, QR-based event ticketing platform built entirely using Next.js.
+The system enables secure ticket purchasing, QR code generation, and real-time validation
+at event entry points. The architecture is designed to be scalable, secure, and production-ready.
+
+The platform supports multiple roles:
+
+* Attendees (Users)
+* Event Organizers
+* Event Staff / Scanners
+* Admin
+
+============================================================
+
+2. DESIGN GOALS
+
+* Prevent fake or duplicate ticket usage
+* Ensure one-time QR validation
+* Provide fast entry verification
+* Centralize event and ticket management
+* Support future scalability (payments, analytics, offline scan)
+
+============================================================
+
+3. ARCHITECTURE OVERVIEW (NEXT.JS FULL STACK)
+
+StagePass uses a unified Next.js architecture:
+
+[ Client (Browser / Mobile) ]
+|
+| HTTPS + JWT
+v
+[ Next.js App Router ]
+|
+| Server Actions / API Routes
+v
+[ Business Logic Layer ]
+|
+v
+[ Database (PostgreSQL / MongoDB) ]
+
+============================================================
+
+4. FRONTEND DESIGN (NEXT.JS APP ROUTER)
+
+4.1 Frontend Responsibilities
+
+* User authentication (login/signup)
+* Event discovery and browsing
+* Ticket purchase UI
+* QR ticket display
+* Organizer dashboard
+* Staff QR scanner interface
+
+4.2 Frontend Pages Structure
+
+/app
+├── page.tsx                 -> Landing page
+├── login/page.tsx           -> Login
+├── register/page.tsx        -> Signup
+├── events/page.tsx          -> Browse events
+├── events/[id]/page.tsx     -> Event details & purchase
+├── tickets/page.tsx         -> My tickets
+├── dashboard/organizer      -> Organizer dashboard
+├── dashboard/scanner        -> QR scanner UI
+├── dashboard/admin          -> Admin panel
+
+4.3 Frontend Components
+
+/components
+├── Navbar
+├── EventCard
+├── TicketCard
+├── QRDisplay
+├── QRScanner
+├── ProtectedRoute
+
+4.4 State Management
+
+* Auth state via JWT (HTTP-only cookies)
+* Server Components for data fetching
+* Client Components only where interactivity is required
+
+============================================================
+
+5. BACKEND DESIGN (NEXT.JS SERVER)
+
+Backend logic is implemented using:
+
+* API Routes (/app/api)
+* Server Actions
+* Middleware
+
+5.1 Backend Responsibilities
+
+* Authentication & authorization
+* Ticket generation
+* QR encryption and validation
+* Role-based access control
+* Event & ticket management
+
+5.2 API Route Structure
+
+/app/api
+├── auth/login
+├── auth/register
+├── events/create
+├── events/list
+├── events/[id]
+├── tickets/purchase
+├── tickets/validate
+├── tickets/my
+├── admin/users
+
+============================================================
+
+6. AUTHENTICATION & AUTHORIZATION
+
+6.1 Authentication
+
+* JWT-based authentication
+* Tokens stored in HTTP-only cookies
+* Middleware for protected routes
+
+6.2 Role-Based Access Control (RBAC)
+
+Roles:
+
+* USER: Buy & view tickets
+* ORGANIZER: Create events, view sales
+* STAFF: Scan and validate tickets
+* ADMIN: Full access
+
+============================================================
+
+7. DATABASE DESIGN (HIGH LEVEL)
+
+7.1 User Table
+
+* id
+* name
+* email
+* password_hash
+* role
+* created_at
+
+7.2 Event Table
+
+* id
+* title
+* description
+* date_time
+* venue
+* organizer_id
+* ticket_limit
+
+7.3 Ticket Table
+
+* id
+* user_id
+* event_id
+* qr_hash
+* is_used
+* used_at
+* created_at
+
+7.4 Scan Logs Table
+
+* id
+* ticket_id
+* scanned_by
+* scanned_at
+* scan_status
+
+============================================================
+
+8. QR CODE DESIGN
+
+* QR code contains encrypted ticket ID
+* No plain user or event data exposed
+* Validation always happens server-side
+
+QR Validation Rules:
+
+1. Ticket exists
+2. Ticket belongs to the event
+3. Ticket is unused
+4. Scanner has permission
+
+============================================================
+
+9. TICKET PURCHASE FLOW
+
+User -> Select Event -> Checkout -> Ticket Created
+-> QR Generated -> Stored in DB -> Displayed to User
+
+============================================================
+
+10. TICKET SCANNING FLOW
+
+Scan QR -> API Validation -> Decrypt QR
+-> Check Ticket Status -> Mark Used -> Return Result
+
+Possible Responses:
+
+* VALID
+* INVALID
+* ALREADY USED
+
+============================================================
+
+11. SECURITY CONSIDERATIONS
+
+* HTTPS only
+* Encrypted QR payloads
+* One-time ticket usage
+* RBAC protected APIs
+* Rate limiting on scan endpoints
+
+============================================================
+
+12. SCALABILITY & PERFORMANCE
+
+* Stateless server design
+* Database indexing
+* Redis caching (future)
+* Horizontal scaling using containers
+
+============================================================
+
+13. DEPLOYMENT STRATEGY
+
+* Frontend + Backend: Next.js (Vercel)
+* Database: Managed PostgreSQL / MongoDB
+* Redis: Optional caching layer
+* QR scanning devices authenticated via JWT
+
+============================================================
+
+14. FUTURE EXTENSIONS
+
+* Payment gateway integration
+* Seat-based ticketing
+* Offline scanning mode
+* Analytics dashboard
+* Ticket transfer system
+
+============================================================
+
+15. CONCLUSION
+
+StagePass is designed as a modern, secure, and scalable QR-based ticketing platform.
+This HLD serves as a long-term technical reference for development, scaling,
+and production deployment.
