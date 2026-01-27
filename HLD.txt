@@ -2,15 +2,15 @@
 
 # Full-Stack QR Based Event Ticketing Platform
 
-# Tech Stack: Next.js (Frontend + Backend)
+# Tech Stack: Next.js (Frontend + Backend) + MongoDB
 
 ============================================================
 
-1. SYSTEM OVERVIEW
+## 1. SYSTEM OVERVIEW
 
-StagePass is a full-stack, QR-based event ticketing platform built entirely using Next.js.
-The system enables secure ticket purchasing, QR code generation, and real-time validation
-at event entry points. The architecture is designed to be scalable, secure, and production-ready.
+StagePass is a full-stack, QR-based event ticketing platform built entirely using Next.js.  
+The system enables secure ticket purchasing, QR code generation, and real-time validation at event entry points.  
+The architecture is designed to be scalable, secure, and production-ready.
 
 The platform supports multiple roles:
 
@@ -21,7 +21,7 @@ The platform supports multiple roles:
 
 ============================================================
 
-2. DESIGN GOALS
+## 2. DESIGN GOALS
 
 * Prevent fake or duplicate ticket usage
 * Ensure one-time QR validation
@@ -31,9 +31,9 @@ The platform supports multiple roles:
 
 ============================================================
 
-3. ARCHITECTURE OVERVIEW (NEXT.JS FULL STACK)
+## 3. ARCHITECTURE OVERVIEW (NEXT.JS FULL STACK)
 
-StagePass uses a unified Next.js architecture:
+```
 
 [ Client (Browser / Mobile) ]
 |
@@ -46,13 +46,15 @@ v
 [ Business Logic Layer ]
 |
 v
-[ Database (PostgreSQL / MongoDB) ]
+[ Database (MongoDB) ]
+
+```
 
 ============================================================
 
-4. FRONTEND DESIGN (NEXT.JS APP ROUTER)
+## 4. FRONTEND DESIGN (NEXT.JS APP ROUTER)
 
-4.1 Frontend Responsibilities
+### 4.1 Frontend Responsibilities
 
 * User authentication (login/signup)
 * Event discovery and browsing
@@ -61,7 +63,9 @@ v
 * Organizer dashboard
 * Staff QR scanner interface
 
-4.2 Frontend Pages Structure
+### 4.2 Frontend Pages Structure
+
+```
 
 /app
 ├── page.tsx                 -> Landing page
@@ -74,7 +78,11 @@ v
 ├── dashboard/scanner        -> QR scanner UI
 ├── dashboard/admin          -> Admin panel
 
-4.3 Frontend Components
+```
+
+### 4.3 Frontend Components
+
+```
 
 /components
 ├── Navbar
@@ -84,7 +92,9 @@ v
 ├── QRScanner
 ├── ProtectedRoute
 
-4.4 State Management
+```
+
+### 4.4 State Management
 
 * Auth state via JWT (HTTP-only cookies)
 * Server Components for data fetching
@@ -92,15 +102,9 @@ v
 
 ============================================================
 
-5. BACKEND DESIGN (NEXT.JS SERVER)
+## 5. BACKEND DESIGN (NEXT.JS SERVER)
 
-Backend logic is implemented using:
-
-* API Routes (/app/api)
-* Server Actions
-* Middleware
-
-5.1 Backend Responsibilities
+### 5.1 Backend Responsibilities
 
 * Authentication & authorization
 * Ticket generation
@@ -108,7 +112,9 @@ Backend logic is implemented using:
 * Role-based access control
 * Event & ticket management
 
-5.2 API Route Structure
+### 5.2 API Route Structure
+
+```
 
 /app/api
 ├── auth/login
@@ -121,17 +127,19 @@ Backend logic is implemented using:
 ├── tickets/my
 ├── admin/users
 
+````
+
 ============================================================
 
-6. AUTHENTICATION & AUTHORIZATION
+## 6. AUTHENTICATION & AUTHORIZATION
 
-6.1 Authentication
+### 6.1 Authentication
 
 * JWT-based authentication
 * Tokens stored in HTTP-only cookies
 * Middleware for protected routes
 
-6.2 Role-Based Access Control (RBAC)
+### 6.2 Role-Based Access Control (RBAC)
 
 Roles:
 
@@ -142,48 +150,66 @@ Roles:
 
 ============================================================
 
-7. DATABASE DESIGN (HIGH LEVEL)
+## 7. DATABASE DESIGN (MONGODB)
 
-7.1 User Table
+### 7.1 Users Collection
 
-* id
-* name
-* email
-* password_hash
-* role
-* created_at
+```json
+{
+  "_id": "ObjectId",
+  "name": "String",
+  "email": "String",
+  "password_hash": "String",
+  "role": "String", 
+  "created_at": "Date",
+  "events_created": ["ObjectId"] 
+}
+````
 
-7.2 Event Table
+### 7.2 Events Collection
 
-* id
-* title
-* description
-* date_time
-* venue
-* organizer_id
-* ticket_limit
+```json
+{
+  "_id": "ObjectId",
+  "title": "String",
+  "description": "String",
+  "date_time": "Date",
+  "venue": "String",
+  "organizer_id": "ObjectId",
+  "ticket_limit": "Number",
+  "tickets": ["ObjectId"] 
+}
+```
 
-7.3 Ticket Table
+### 7.3 Tickets Collection
 
-* id
-* user_id
-* event_id
-* qr_hash
-* is_used
-* used_at
-* created_at
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "event_id": "ObjectId",
+  "qr_hash": "String",
+  "is_used": "Boolean",
+  "used_at": "Date",
+  "created_at": "Date"
+}
+```
 
-7.4 Scan Logs Table
+### 7.4 ScanLogs Collection
 
-* id
-* ticket_id
-* scanned_by
-* scanned_at
-* scan_status
+```json
+{
+  "_id": "ObjectId",
+  "ticket_id": "ObjectId",
+  "scanned_by": "ObjectId",
+  "scanned_at": "Date",
+  "scan_status": "String"
+}
+```
 
 ============================================================
 
-8. QR CODE DESIGN
+## 8. QR CODE DESIGN
 
 * QR code contains encrypted ticket ID
 * No plain user or event data exposed
@@ -198,17 +224,17 @@ QR Validation Rules:
 
 ============================================================
 
-9. TICKET PURCHASE FLOW
+## 9. TICKET PURCHASE FLOW
 
-User -> Select Event -> Checkout -> Ticket Created
--> QR Generated -> Stored in DB -> Displayed to User
+User → Select Event → Checkout → Ticket Created
+→ QR Generated → Stored in MongoDB → Displayed to User
 
 ============================================================
 
-10. TICKET SCANNING FLOW
+## 10. TICKET SCANNING FLOW
 
-Scan QR -> API Validation -> Decrypt QR
--> Check Ticket Status -> Mark Used -> Return Result
+Scan QR → API Validation → Decrypt QR
+→ Check Ticket Status → Mark Used → Return Result
 
 Possible Responses:
 
@@ -218,7 +244,7 @@ Possible Responses:
 
 ============================================================
 
-11. SECURITY CONSIDERATIONS
+## 11. SECURITY CONSIDERATIONS
 
 * HTTPS only
 * Encrypted QR payloads
@@ -228,25 +254,25 @@ Possible Responses:
 
 ============================================================
 
-12. SCALABILITY & PERFORMANCE
+## 12. SCALABILITY & PERFORMANCE
 
 * Stateless server design
-* Database indexing
+* Database indexing (MongoDB indexes)
 * Redis caching (future)
 * Horizontal scaling using containers
 
 ============================================================
 
-13. DEPLOYMENT STRATEGY
+## 13. DEPLOYMENT STRATEGY
 
 * Frontend + Backend: Next.js (Vercel)
-* Database: Managed PostgreSQL / MongoDB
+* Database: Managed MongoDB (Atlas)
 * Redis: Optional caching layer
 * QR scanning devices authenticated via JWT
 
 ============================================================
 
-14. FUTURE EXTENSIONS
+## 14. FUTURE EXTENSIONS
 
 * Payment gateway integration
 * Seat-based ticketing
@@ -256,8 +282,8 @@ Possible Responses:
 
 ============================================================
 
-15. CONCLUSION
+## 15. CONCLUSION
 
 StagePass is designed as a modern, secure, and scalable QR-based ticketing platform.
-This HLD serves as a long-term technical reference for development, scaling,
-and production deployment.
+This HLD serves as a long-term technical reference for development, scaling, and production deployment, optimized for a MongoDB backend.
+
