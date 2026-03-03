@@ -1,0 +1,180 @@
+import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import crypto from "crypto";
+import Ticket from "../../models/Ticket";
+import Event from "../../models/Event";
+import { AppError } from "../../utils/errorHandler";
+import { generateQRData, validateQRData } from "../../utils/qr";
+
+/**
+ * Zod schema to validate ticket purchase
+ */
+export const purchaseTicketSchema = z.object({
+    body: z.object({
+        eventId: z.string().min(1, "Event ID is required"),
+        quantity: z.number().int().min(1, "Quantity must be at least 1").max(10, "Cannot buy more than 10 at once"),
+    }),
+});
+
+/**
+ * Controller to handle ticket purchases by users
+ * Flow:
+ * 1. Checks if the event exists and has enough capacity
+ * 2. Generates unique ticketId per ticket
+ * 3. Creates the QR Data string
+ * 4. Saves the tickets
+ * 5. Updates the capacity (this is a simplified transaction, ideally use Mongoose sessions for robust concurrency handling)
+ */
+export const purchase = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { eventId, quantity } = req.body;
+        const userId = req.user?._id || req.user?.id;
+
+        // 1. Validate Event
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return next(new AppError("Event not found", 404));
+        }
+
+        // 2. Simplistic capacity check based on tickets sold (In prod: use transactions/Atomic increments)
+        const ticketsSold = await Ticket.countDocuments({ eventId });
+        if (ticketsSold + quantity > event.capacity) {
+            return next(new AppError("Not enough tickets available", 400));
+        }
+
+        // 3. Generate individual tickets
+        const ticketsToCreate = [];
+        const timestamp = Date.now().toString();
+
+        for (let i = 0; i < quantity; i++) {
+            // Creates a randomized unique ID for the ticket
+            const ticketId = crypto.randomBytes(8).toString("hex");
+
+            // Builds the QR Payload using the utility module
+            const qrData = generateQRData({
+                ticketId,
+                eventId,
+                userId: userId?.toString() as string,
+                timestamp,
+            });
+
+            ticketsToCreate.push({
+                ticketId,
+                eventId,
+                userId: userId?.toString() as string,
+                qrData,
+                status: "valid",
+            });
+        }
+
+        // Batch insert for performance
+        const savedTickets = await Ticket.insertMany(ticketsToCreate);
+
+        res.status(201).json({
+            success: true,
+            message: `Successfully purchased ${quantity} ticket(s)`,
+            data: savedTickets,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Controller to fetch the authenticated user's tickets
+ */
+export const myTickets = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?._id || req.user?.id;
+
+        // Finds tickets and populates the related Event data (name, date, venue) to display on the Frontend UI
+        const tickets = await Ticket.find({ userId })
+            .populate("eventId", "name date venue price")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: tickets,
+            count: tickets.length,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Zod schema to validate QR scanning validation requests
+ */
+export const validateTicketSchema = z.object({
+    body: z.object({
+        qrData: z.string().min(1, "QR Data string is required"),
+    }),
+});
+
+/**
+ * Controller to validate a ticket dynamically at the gate
+ * To be used explicitly by Verifier roles via their Scanner Dashboard.
+ * 
+ * Flow:
+ * 1. Decode and check signature of the `qrData` parameter (prevent forged tickets)
+ * 2. Lookup ticket in DB by ID
+ * 3. Ensure it's not already used or expired
+ * 4. Update status to 'used' if valid
+ */
+export const validateTicket = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { qrData } = req.body;
+
+        // 1. Decode & Cryptographically verify the signature
+        // validateQRData throws an Error if tampered
+        let decodedData;
+        try {
+            decodedData = validateQRData(qrData);
+        } catch (err: any) {
+            return next(new AppError(err.message || "Invalid QR Code", 400));
+        }
+
+        const { ticketId, eventId } = decodedData;
+
+        // 2. Fetch the Ticket from Database
+        const ticket = await Ticket.findOne({ ticketId });
+        if (!ticket) {
+            return next(new AppError("Ticket not found in system", 404));
+        }
+
+        // Extra cross-check to enforce absolute match
+        if (ticket.eventId.toString() !== eventId) {
+            return next(new AppError("Ticket does not match the event", 400));
+        }
+
+        // 3. Status checks
+        if (ticket.status === "used") {
+            return res.status(400).json({
+                success: false,
+                message: "This ticket has already been USED",
+                data: ticket,
+            });
+        }
+
+        if (ticket.status === "expired") {
+            return res.status(400).json({
+                success: false,
+                message: "This ticket is EXPIRED",
+                data: ticket,
+            });
+        }
+
+        // 4. Update the ticket as used
+        ticket.status = "used";
+        ticket.usedAt = new Date();
+        await ticket.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Ticket VALID and marked as used.",
+            data: ticket,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
