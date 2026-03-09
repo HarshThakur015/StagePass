@@ -84,16 +84,28 @@ export default function Home() {
             {filteredEvents.map((event: EventData) => (
               <Link href={`/events/${event._id}`} key={event._id} className="group flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                 <div className="h-48 bg-slate-100 flex items-center justify-center relative overflow-hidden">
-                  {event.images && event.images.length > 0 ? (
+                  {event.images && event.images.length > 0 && event.images[0].startsWith('https') ? (
                     <img
-                      src={`http://localhost:5000${event.images[0]}`}
+                      src={event.images[0]}
                       alt={event.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        const parent = target.parentElement as HTMLElement;
+                        if (parent) {
+                          const placeholder = parent.querySelector('.placeholder-gradient') as HTMLElement;
+                          target.style.display = 'none';
+                          if (placeholder) {
+                            placeholder.style.display = 'flex';
+                          }
+                        }
+                      }}
                     />
                   ) : (
                     <>
                       {/* Abstract placeholder gradient based on ID characters */}
-                      <div className="absolute inset-0 opacity-80" style={{
+                      <div className="placeholder-gradient absolute inset-0 opacity-80" style={{
+                        display: event.images && event.images.length > 0 && event.images[0].startsWith('https') ? 'none' : 'flex',
                         background: `linear-gradient(45deg, #${event._id.substring(0, 3)}000, #${event._id.substring(3, 6)}000)`
                       }}></div>
                       <Calendar className="h-16 w-16 text-white mix-blend-overlay z-10" />

@@ -89,15 +89,22 @@ export default function EventDetails({ params }: { params: { id: string } }) {
                 {/* Left Col: Main Details */}
                 <div className="lg:col-span-2 space-y-8">
                     <div className="h-64 sm:h-96 relative overflow-hidden rounded-2xl shadow-lg bg-slate-900 group">
-                        {event.images && event.images.length > 0 ? (
+                        {event.images && event.images.length > 0 && event.images[0].startsWith('https') ? (
                             <img
-                                src={`http://localhost:5000${event.images[0]}`}
+                                src={event.images[0]}
                                 alt={event.name}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                                onError={(e) => {
+                                    const target = e.currentTarget;
+                                    const nextElement = target.nextElementSibling as HTMLElement;
+                                    target.style.display = 'none';
+                                    if (nextElement) {
+                                        nextElement.style.display = 'block';
+                                    }
+                                }}
                             />
-                        ) : (
-                            <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-indigo-900 to-purple-900" />
-                        )}
+                        ) : null}
+                        <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-indigo-900 to-purple-900" style={{display: event.images && event.images.length > 0 && event.images[0].startsWith('https') ? 'none' : 'block'}} />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
                         {/* Text Overlay for dramatic effect */}
                         <div className="absolute bottom-8 left-8 right-8">
@@ -112,12 +119,19 @@ export default function EventDetails({ params }: { params: { id: string } }) {
 
                     {event.images && event.images.length > 1 && (
                         <div className="grid grid-cols-2 gap-4">
-                            {event.images.slice(1, 3).map((imgUrl: string, idx: number) => (
+                            {event.images.slice(1, 3).filter((img: string) => img.startsWith('https')).map((imgUrl: string, idx: number) => (
                                 <div key={idx} className="h-40 sm:h-48 rounded-2xl overflow-hidden shadow-sm">
                                     <img
-                                        src={`http://localhost:5000${imgUrl}`}
+                                        src={imgUrl}
                                         alt={`Event photo ${idx + 2}`}
                                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                        onError={(e) => {
+                                            const target = e.currentTarget;
+                                            const parent = target.parentElement as HTMLElement;
+                                            if (parent) {
+                                                parent.style.display = 'none';
+                                            }
+                                        }}
                                     />
                                 </div>
                             ))}
