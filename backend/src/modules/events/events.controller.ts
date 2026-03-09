@@ -20,6 +20,8 @@ export const createEventSchema = z.object({
     }),
 });
 
+import { uploadBufferToCloudinary } from "../../utils/cloudinary";
+
 /**
  * Controller to create a new event
  * Only accessible by Organizer or Admin roles.
@@ -38,8 +40,12 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
             return next(new AppError("You must upload at least 1 image", 400));
         }
 
-        // Map files to their static URLs
-        const images = files.map((file) => `/uploads/events/${file.filename}`);
+        // Upload files concurrently to Cloudinary straight from memory
+        const uploadPromises = files.map(file => uploadBufferToCloudinary(file.buffer));
+        const cloudinaryResults = await Promise.all(uploadPromises);
+
+        // Extract the secure HTTPS URLs from the Cloudinary responses
+        const images = cloudinaryResults.map(result => result.secure_url);
 
         // Save event document to the database
         const newEvent = await Event.create({

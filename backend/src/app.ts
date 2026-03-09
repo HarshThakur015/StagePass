@@ -39,10 +39,6 @@ app.use("/api", limiter);
 // Built-in middleware to parse JSON body payload (req.body)
 app.use(express.json({ limit: "10kb" }));
 
-// Serve static files from the uploads directory
-import path from "path";
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
 // 2. MOUNT API ROUTES
 
 // Root health check route

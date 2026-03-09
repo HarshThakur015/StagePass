@@ -1,8 +1,6 @@
-import dotenv from "dotenv";
+import "dotenv/config"; // Ensure this is the absolute first import
 import app from "./app";
 import { connectDB } from "./config/db";
-
-dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
