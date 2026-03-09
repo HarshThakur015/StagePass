@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import Event from "../../models/Event";
+import Ticket from "../../models/Ticket";
 import { AppError } from "../../utils/errorHandler";
 
 /**
@@ -14,8 +15,8 @@ export const createEventSchema = z.object({
             message: "Invalid date format",
         }),
         venue: z.string().min(3, "Venue must be at least 3 characters long"),
-        capacity: z.number().int().positive("Capacity must be a positive integer"),
-        price: z.number().min(0, "Price cannot be negative"),
+        capacity: z.coerce.number().int().positive("Capacity must be a positive integer"),
+        price: z.coerce.number().min(0, "Price cannot be negative"),
     }),
 });
 
@@ -31,6 +32,15 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
         // The organizer is the currently authenticated user attached by the `protect` middleware
         const organizerId = (req.user?._id || req.user?.id);
 
+        // Check if images were uploaded
+        const files = req.files as Express.Multer.File[];
+        if (!files || files.length === 0) {
+            return next(new AppError("You must upload at least 1 image", 400));
+        }
+
+        // Map files to their static URLs
+        const images = files.map((file) => `/uploads/events/${file.filename}`);
+
         // Save event document to the database
         const newEvent = await Event.create({
             name,
@@ -38,6 +48,7 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
             venue,
             capacity,
             price,
+            images,
             organizerId,
         });
 
@@ -65,9 +76,21 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
             .populate("organizerId", "email role")
             .sort({ date: 1 });
 
+        // We need to attach `ticketsLeft` to each event dynamically
+        // Use Promise.all to fetch ticket counts concurrently
+        const eventsWithTicketsLeft = await Promise.all(
+            events.map(async (ev) => {
+                const sold = await Ticket.countDocuments({ eventId: ev._id });
+                return {
+                    ...ev.toObject(),
+                    ticketsLeft: Math.max(0, ev.capacity - sold),
+                };
+            })
+        );
+
         res.status(200).json({
             success: true,
-            data: events,
+            data: eventsWithTicketsLeft,
             count: events.length,
         });
     } catch (error) {
@@ -88,9 +111,15 @@ export const getEvent = async (req: Request, res: Response, next: NextFunction) 
             return next(new AppError("Event not found", 404));
         }
 
+        const sold = await Ticket.countDocuments({ eventId: event._id });
+        const ticketsLeft = Math.max(0, event.capacity - sold);
+
         res.status(200).json({
             success: true,
-            data: event,
+            data: {
+                ...event.toObject(),
+                ticketsLeft,
+            },
         });
     } catch (error) {
         next(error);

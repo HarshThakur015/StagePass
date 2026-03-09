@@ -7,6 +7,7 @@ export interface IEvent extends Document {
     venue: string;
     capacity: number;
     price: number;
+    images: string[];
     organizerId: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
@@ -43,6 +44,15 @@ const EventSchema: Schema = new Schema(
             type: Number,
             required: [true, "Event price is required"],
             min: [0, "Price cannot be negative"],
+        },
+        // Uploaded event imagery (between 1 and 3 photos required)
+        images: {
+            type: [String],
+            required: [true, "Event images are required"],
+            validate: [
+                (val: string[]) => val.length >= 1 && val.length <= 3,
+                "An event must have between 1 and 3 images",
+            ],
         },
         // Reference to the User (role: organizer) who created the event
         organizerId: {

@@ -17,8 +17,10 @@ const app: Application = express();
 
 // 1. GLOBAL MIDDLEWARES
 
-// Set security HTTP headers
-app.use(helmet());
+// Set security HTTP headers but allow frontend to load images
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // Enable Cross-Origin Resource Sharing (CORS) for external frontend requests
 app.use(cors({
@@ -36,6 +38,10 @@ app.use("/api", limiter);
 
 // Built-in middleware to parse JSON body payload (req.body)
 app.use(express.json({ limit: "10kb" }));
+
+// Serve static files from the uploads directory
+import path from "path";
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // 2. MOUNT API ROUTES
 

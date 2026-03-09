@@ -88,10 +88,19 @@ export default function EventDetails({ params }: { params: { id: string } }) {
 
                 {/* Left Col: Main Details */}
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="h-64 sm:h-80 bg-gradient-to-tr from-slate-900 via-indigo-900 to-purple-900 rounded-2xl relative overflow-hidden shadow-lg">
-                        <div className="absolute inset-0 bg-white/5 mix-blend-overlay"></div>
+                    <div className="h-64 sm:h-96 relative overflow-hidden rounded-2xl shadow-lg bg-slate-900 group">
+                        {event.images && event.images.length > 0 ? (
+                            <img
+                                src={`http://localhost:5000${event.images[0]}`}
+                                alt={event.name}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-indigo-900 to-purple-900" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
                         {/* Text Overlay for dramatic effect */}
-                        <div className="absolute bottom-6 left-6 right-6">
+                        <div className="absolute bottom-8 left-8 right-8">
                             <span className="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
                                 Official Event
                             </span>
@@ -100,6 +109,20 @@ export default function EventDetails({ params }: { params: { id: string } }) {
                             </h1>
                         </div>
                     </div>
+
+                    {event.images && event.images.length > 1 && (
+                        <div className="grid grid-cols-2 gap-4">
+                            {event.images.slice(1, 3).map((imgUrl: string, idx: number) => (
+                                <div key={idx} className="h-40 sm:h-48 rounded-2xl overflow-hidden shadow-sm">
+                                    <img
+                                        src={`http://localhost:5000${imgUrl}`}
+                                        alt={`Event photo ${idx + 2}`}
+                                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
                         <h2 className="text-2xl font-bold text-slate-900 mb-6">About this Event</h2>
@@ -165,7 +188,7 @@ export default function EventDetails({ params }: { params: { id: string } }) {
                                 <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden h-12">
                                     <button
                                         onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                                        className="w-12 h-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold transition flex items-center justify-center border-r border-slate-300"
+                                        className="w-12 h-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold transition flex items-center justify-center border-r border-slate-300 cursor-pointer"
                                     >
                                         -
                                     </button>
@@ -173,12 +196,26 @@ export default function EventDetails({ params }: { params: { id: string } }) {
                                         {quantity}
                                     </div>
                                     <button
-                                        onClick={() => setQuantity(q => Math.min(10, q + 1))}
-                                        className="w-12 h-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold transition flex items-center justify-center border-l border-slate-300"
+                                        onClick={() => setQuantity(q => Math.min(event.ticketsLeft > 0 ? Math.min(10, event.ticketsLeft) : 10, q + 1))}
+                                        disabled={quantity >= event.ticketsLeft}
+                                        className="w-12 h-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold transition flex items-center justify-center border-l border-slate-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         +
                                     </button>
                                 </div>
+                            </div>
+
+                            <div className="text-center mt-3">
+                                {event.ticketsLeft > 0 ? (
+                                    <span className="inline-flex items-center text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                                        <Ticket className="h-4 w-4 mr-1.5" />
+                                        Only {event.ticketsLeft} tickets left!
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center text-sm font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200">
+                                        Sold Out!
+                                    </span>
+                                )}
                             </div>
                         </div>
 
@@ -199,11 +236,13 @@ export default function EventDetails({ params }: { params: { id: string } }) {
 
                         <button
                             onClick={handlePurchase}
-                            disabled={purchaseMutation.isPending}
+                            disabled={purchaseMutation.isPending || event.ticketsLeft === 0}
                             className="mt-8 w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 disabled:shadow-none bg-indigo-600 hover:bg-indigo-700 text-white"
                         >
                             {purchaseMutation.isPending ? (
                                 "Processing..."
+                            ) : event.ticketsLeft === 0 ? (
+                                "Sold Out"
                             ) : (
                                 <>
                                     <Ticket className="h-5 w-5 mr-2" />

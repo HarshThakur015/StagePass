@@ -5,6 +5,13 @@ import { api } from "@/lib/axios";
 import { Users, Calendar, Ticket, DollarSign, Activity, ShieldAlert } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
+interface AdminUser {
+    _id: string;
+    email: string;
+    role: "admin" | "organizer" | "verifier" | "user";
+    createdAt: string;
+}
+
 export default function AdminDashboard() {
     // Fetch platform analytics
     const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
@@ -136,15 +143,15 @@ export default function AdminDashboard() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {users.map((u: any) => (
+                            {users.map((u: AdminUser) => (
                                 <tr key={u._id} className="hover:bg-slate-50 transition">
                                     <td className="px-6 py-4 font-mono text-xs text-slate-400">{u._id}</td>
                                     <td className="px-6 py-4 font-medium text-slate-900">{u.email}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${u.role === 'admin' ? 'bg-red-100 text-red-700' :
-                                                u.role === 'organizer' ? 'bg-purple-100 text-purple-700' :
-                                                    u.role === 'verifier' ? 'bg-blue-100 text-blue-700' :
-                                                        'bg-slate-100 text-slate-700'
+                                            u.role === 'organizer' ? 'bg-purple-100 text-purple-700' :
+                                                u.role === 'verifier' ? 'bg-blue-100 text-blue-700' :
+                                                    'bg-slate-100 text-slate-700'
                                             }`}>
                                             {u.role}
                                         </span>

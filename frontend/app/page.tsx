@@ -13,6 +13,7 @@ interface EventData {
   date: string;
   venue: string;
   price: number;
+  images?: string[];
 }
 
 export default function Home() {
@@ -83,11 +84,21 @@ export default function Home() {
             {filteredEvents.map((event: EventData) => (
               <Link href={`/events/${event._id}`} key={event._id} className="group flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                 <div className="h-48 bg-slate-100 flex items-center justify-center relative overflow-hidden">
-                  {/* Abstract placeholder gradient based on ID characters */}
-                  <div className="absolute inset-0 opacity-80" style={{
-                    background: `linear-gradient(45deg, #${event._id.substring(0, 3)}000, #${event._id.substring(3, 6)}000)`
-                  }}></div>
-                  <Calendar className="h-16 w-16 text-white mix-blend-overlay z-10" />
+                  {event.images && event.images.length > 0 ? (
+                    <img
+                      src={`http://localhost:5000${event.images[0]}`}
+                      alt={event.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <>
+                      {/* Abstract placeholder gradient based on ID characters */}
+                      <div className="absolute inset-0 opacity-80" style={{
+                        background: `linear-gradient(45deg, #${event._id.substring(0, 3)}000, #${event._id.substring(3, 6)}000)`
+                      }}></div>
+                      <Calendar className="h-16 w-16 text-white mix-blend-overlay z-10" />
+                    </>
+                  )}
 
                   {/* Price Tag Overlay */}
                   <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm text-slate-900 font-bold px-3 py-1 rounded-full shadow-sm z-10">

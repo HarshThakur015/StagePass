@@ -11,6 +11,7 @@ import {
 import { protect } from "../../middleware/authMiddleware";
 import { restrictTo } from "../../middleware/roleMiddleware";
 import { validateRequest } from "../../middleware/validateRequest";
+import { upload } from "../../middleware/upload";
 
 const router = Router();
 
@@ -34,6 +35,13 @@ router.use(protect);
 router.post(
     "/",
     restrictTo("organizer", "admin"),
+    upload.array("images", 3), // Expect up to 3 files under 'images' field
+    // Middleware to parse strings into numbers since we are receiving multipart/form-data
+    (req, res, next) => {
+        if (req.body.capacity) req.body.capacity = Number(req.body.capacity);
+        if (req.body.price) req.body.price = Number(req.body.price);
+        next();
+    },
     validateRequest(createEventSchema),
     createEvent
 );
