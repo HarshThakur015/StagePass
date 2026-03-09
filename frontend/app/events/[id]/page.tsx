@@ -37,7 +37,11 @@ export default function EventDetails({ params }: { params: { id: string } }) {
             return response.data;
         },
         onSuccess: (data) => {
-            toast.success(data.message);
+            if (data.emailSent === false) {
+                toast.error("Tickets purchased and available in your dashboard, but we couldn't send the email.", { duration: 6000 });
+            } else {
+                toast.success(data.message);
+            }
             // Force refresh on My Tickets if they navigate to dashboard
             queryClient.invalidateQueries({ queryKey: ["myTickets"] });
             router.push("/dashboard");

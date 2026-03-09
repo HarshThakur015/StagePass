@@ -3,8 +3,10 @@ import { z } from "zod";
 import crypto from "crypto";
 import Ticket from "../../models/Ticket";
 import Event from "../../models/Event";
+import User from "../../models/User";
 import { AppError } from "../../utils/errorHandler";
 import { generateQRData, validateQRData } from "../../utils/qr";
+import { sendTicketEmail } from "../../utils/email";
 
 /**
  * Zod schema to validate ticket purchase
@@ -70,9 +72,26 @@ export const purchase = async (req: Request, res: Response, next: NextFunction) 
         // Batch insert for performance
         const savedTickets = await Ticket.insertMany(ticketsToCreate);
 
+        // Send email with tickets attached
+        let emailSent = false;
+        console.log(`[Email Debug] Attempting to send email for userId: ${userId}`);
+        const user = await User.findById(userId);
+
+        if (!user) {
+            console.log(`[Email Debug] User not found in DB for userId: ${userId}`);
+        } else if (!user.email) {
+            console.log(`[Email Debug] User found but missing email field.`);
+        } else {
+            console.log(`[Email Debug] Found user email: ${user.email}. Dispatching nodemailer...`);
+            const emailResult = await sendTicketEmail(user.email, savedTickets, event);
+            emailSent = emailResult.success;
+            console.log(`[Email Debug] Nodemailer dispatch result: ${emailSent}`);
+        }
+
         res.status(201).json({
             success: true,
             message: `Successfully purchased ${quantity} ticket(s)`,
+            emailSent, // Pass the email status flag to the frontend
             data: savedTickets,
         });
     } catch (error) {
