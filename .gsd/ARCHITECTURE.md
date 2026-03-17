@@ -4,7 +4,7 @@
 
 ## Overview
 
-StagePass is a ticketing and event management platform split into a Next.js frontend and an Express backend API. It supports user authentication, event creation, ticket purchasing with QR codes, and image uploads.
+StagePass is a full-stack event ticketing platform with QR-based ticket validation. Users can purchase tickets, organizers can create events, and verifiers can scan QR codes to validate tickets at entry. The system consists of a Node.js backend API and a Next.js frontend dashboard.
 
 ```text
 ┌─────────────────────────────────────────┐
@@ -19,37 +19,45 @@ StagePass is a ticketing and event management platform split into a Next.js fron
 ## Components
 
 ### Frontend Application
-- **Purpose:** User interface for browsing events, purchasing tickets, and managing the dashboard.
+- **Purpose:** User interface for browsing events, purchasing tickets, and managing dashboards.
 - **Location:** `C:\Users\tsaya\Desktop\Desktop\SP\StagePass\frontend`
 - **Dependencies:** React 18, Next.js 14, TailwindCSS, React Query, Axios.
+- **Pattern:** Component-driven Next.js App Router architecture.
 
 ### Backend API
 - **Purpose:** RESTful API handling authentication, events, tickets, email sending, and image processing.
 - **Location:** `C:\Users\tsaya\Desktop\Desktop\SP\StagePass\backend`
 - **Dependencies:** Express 5, Mongoose, JWT, Cloudinary, Nodemailer, bcryptjs.
+- **Pattern:** Modular routes/controllers structure nested under `src/modules`.
 
 ## Data Flow
 
-1. User interacts with the Next.js frontend.
-2. Frontend makes HTTP requests via Axios to the Express backend.
-3. Backend processes requests, interacts with MongoDB via Mongoose, and handles external services (Cloudinary for images, Nodemailer for emails).
-4. Response is sent back to the frontend and rendered to the user.
+1. User interacts with the Next.js frontend (e.g. purchases a ticket).
+2. Frontend makes HTTP POST via Axios to the Express backend (`/api/tickets/purchase`).
+3. Backend processes requests and accesses MongoDB via Mongoose.
+4. If purchasing, Backend creates a QR Data hash, saves the Ticket, and triggers Nodemailer email via `sendTicketEmail`.
+5. Response is sent back to the frontend with success payload.
 
 ## Integration Points
 
 | Service | Type | Purpose |
 |---------|------|---------|
-| Cloudinary | API | Cloud storage for event images |
-| Nodemailer | SMTP | Sending ticket purchase confirmation emails |
-| MongoDB | Database | Primary data store for users, events, and tickets |
+| Cloudinary | API | Cloud storage for event images uploaded during Event Creation |
+| Nodemailer | SMTP | Sending ticket purchase confirmation emails containing QR Codes |
+| MongoDB | Database | Primary data store for Users, Events, and Tickets |
 
 ## Technical Debt
 
-- [ ] Missing comprehensive automated test suite.
-- [ ] Several dependencies may be outdated.
+- [ ] Add comprehensive automated unit/integration tests suite.
+- [ ] Address potentially outdated or deprecated NPM packages.
 
 ## Conventions
 
-**Naming:** Components in PascalCase, API routes lowercase/kebab-case.
-**Structure:** Monorepo-style split (`frontend/`, `backend/`), backend structured with `src/modules/` and `src/utils/`.
-**Testing:** Minimal tests currently present.
+**Naming:** 
+- Components in PascalCase. 
+- API routes in kebab-case.
+- Mongoose Models in PascalCase (`User.ts`, `Event.ts`, `Ticket.ts`).
+
+**Structure:**
+- Monorepo-style split (`frontend/`, `backend/`).
+- Backend structured with `src/modules/` holding controllers and routes, and `src/utils/` holding shared utilities.

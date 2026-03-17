@@ -18,12 +18,15 @@
 | TailwindCSS | ^3.4.1 | Styling |
 | @tanstack/react-query | ^5.90.21 | State management and data fetching |
 | Axios | ^1.13.6 | HTTP client |
+| qrcode.react | ^4.2.0 | Frontend QR Code Rendering |
+| html5-qrcode | ^2.3.8 | Frontend QR Code Scanner |
 | Express | ^5.2.1 | Backend web framework |
 | Mongoose | ^9.2.2 | MongoDB object modeling |
 | Cloudinary | ^2.9.0 | Image hosting integration |
 | Nodemailer | ^8.0.1 | Email delivery |
 | jsonwebtoken | ^9.0.3 | Auth tokens |
 | bcryptjs | ^3.0.3 | Password hashing |
+| zod | ^4.3.6 | Validation and schemas |
 
 ### Development
 | Package | Version | Purpose |
@@ -31,13 +34,15 @@
 | TypeScript | ^5 | Static typing |
 | ts-node-dev | ^2.0.0 | TypeScript execution environment |
 | eslint | ^8 | Code linting |
+| @types/node | ^20 | Node typings |
 
 ## Infrastructure
 
 | Service | Provider | Purpose |
 |---------|----------|---------|
-| Database | MongoDB | Core data storage |
+| Database | MongoDB | Core data storage for users, events, tickets |
 | Image Hosting | Cloudinary | Event poster storage |
+| SMTP Proxy | NodeMailer | Receipt dispatching |
 
 ## Configuration
 
