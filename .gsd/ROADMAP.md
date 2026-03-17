@@ -28,7 +28,7 @@
 **Requirements**: Purchase endpoints, ticket generation with QR codes, Nodemailer email dispatch.
 
 ### Phase 4: QR Ticket Validation
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Implement endpoints for ticket verification to be used by verifiers.
 **Requirements**: POST `/verify-ticket` to check validity and mark used.
 
