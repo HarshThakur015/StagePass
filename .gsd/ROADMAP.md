@@ -18,7 +18,7 @@
 **Requirements**: User registration, login, JWT issuance, password hashing, roles.
 
 ### Phase 2: Event Management
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Create the CRUD operations for events on the backend.
 **Requirements**: Create, read, update, delete events. Must handle Cloudinary image uploads.
 
