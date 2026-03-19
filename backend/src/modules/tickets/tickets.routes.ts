@@ -1,13 +1,10 @@
 import { Router } from "express";
-import { purchase, myTickets, validateTicket, purchaseTicketSchema, validateTicketSchema, createCheckoutSession, stripeWebhook } from "./tickets.controller";
+import { purchase, myTickets, validateTicket, purchaseTicketSchema, validateTicketSchema } from "./tickets.controller";
 import { protect } from "../../middleware/authMiddleware";
 import { restrictTo } from "../../middleware/roleMiddleware";
 import { validateRequest } from "../../middleware/validateRequest";
 
 const router = Router();
-
-// Webhook for Stripe (Must be before protect middleware, Stripe calls this directly)
-router.post("/webhook", stripeWebhook);
 
 /**
  * All remaining ticket routes require authentication
@@ -19,14 +16,6 @@ router.use(protect);
  */
 // GET: Retrieve own tickets
 router.get("/my-tickets", restrictTo("user", "admin"), myTickets);
-
-// POST: Create Stripe Checkout Session
-router.post(
-    "/create-checkout-session",
-    restrictTo("user", "admin"),
-    validateRequest(purchaseTicketSchema),
-    createCheckoutSession
-);
 
 // POST: Buy tickets to an event (direct DB generation)
 router.post(
