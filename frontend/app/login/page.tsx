@@ -40,8 +40,9 @@ export default function LoginPage() {
             // Refresh router explicitly to update the Navbar state
             router.refresh();
         },
-        onError: (error: any) => {
-            const msg = error.response?.data?.message || "Login failed";
+        onError: (error: unknown) => {
+            const err = error as { response?: { data?: { message?: string } } };
+            const msg = err.response?.data?.message || "Login failed";
             toast.error(msg);
         },
     });

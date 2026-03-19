@@ -66,7 +66,8 @@ export default function OrganizerDashboard() {
             setIsModalOpen(false);
             queryClient.invalidateQueries({ queryKey: ["events"] });
         },
-        onError: (err: any) => {
+        onError: (error: unknown) => {
+            const err = error as { response?: { data?: { message?: string } } };
             toast.error(err.response?.data?.message || "Failed to create event");
         }
     });

@@ -36,3 +36,14 @@
 **Status**: ⬜ Not Started
 **Objective**: Build out the React UI.
 **Requirements**: Build dashboards for User, Organizer, Verifier, and Admin roles. Connect to APIs.
+
+### Phase 6: Advanced Platform Features
+**Status**: ⬜ Not Started
+**Objective**: Implement Stripe Payment Integration and Email Ticket Delivery.
+**Depends on**: Phase 5
+
+**Tasks**:
+- [ ] TBD (run /plan 6 to create)
+
+**Verification**:
+- TBD

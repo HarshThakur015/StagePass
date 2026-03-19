@@ -54,7 +54,7 @@ export default function UserDashboard() {
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center">
                     <TicketIcon className="h-16 w-16 text-slate-200 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-slate-800">No tickets found</h3>
-                    <p className="text-slate-500 mt-2">You haven't purchased any tickets yet.</p>
+                    <p className="text-slate-500 mt-2">You haven&apos;t purchased any tickets yet.</p>
                     <a href="/" className="mt-6 inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-700 transition">
                         Browse Events
                     </a>

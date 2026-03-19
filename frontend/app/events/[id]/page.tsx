@@ -6,6 +6,7 @@ import { api } from "@/lib/axios";
 import { format } from "date-fns";
 import { Calendar, MapPin, Users, Info, ChevronLeft, Ticket } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Cookies from "js-cookie";
@@ -46,8 +47,9 @@ export default function EventDetails({ params }: { params: { id: string } }) {
             queryClient.invalidateQueries({ queryKey: ["myTickets"] });
             router.push("/dashboard");
         },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.message || "Failed to purchase tickets");
+        onError: (err: unknown) => {
+            const error = err as { response?: { data?: { message?: string } } };
+            toast.error(error.response?.data?.message || "Failed to purchase tickets");
         }
     });
 
@@ -90,10 +92,11 @@ export default function EventDetails({ params }: { params: { id: string } }) {
                 <div className="lg:col-span-2 space-y-8">
                     <div className="h-64 sm:h-96 relative overflow-hidden rounded-2xl shadow-lg bg-slate-900 group">
                         {event.images && event.images.length > 0 && event.images[0].startsWith('https') ? (
-                            <img
+                            <Image
                                 src={event.images[0]}
                                 alt={event.name}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                                fill
+                                className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
                                 onError={(e) => {
                                     const target = e.currentTarget;
                                     const nextElement = target.nextElementSibling as HTMLElement;
@@ -120,11 +123,12 @@ export default function EventDetails({ params }: { params: { id: string } }) {
                     {event.images && event.images.length > 1 && (
                         <div className="grid grid-cols-2 gap-4">
                             {event.images.slice(1, 3).filter((img: string) => img.startsWith('https')).map((imgUrl: string, idx: number) => (
-                                <div key={idx} className="h-40 sm:h-48 rounded-2xl overflow-hidden shadow-sm">
-                                    <img
+                                <div key={idx} className="relative h-40 sm:h-48 rounded-2xl overflow-hidden shadow-sm">
+                                    <Image
                                         src={imgUrl}
                                         alt={`Event photo ${idx + 2}`}
-                                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                        fill
+                                        className="object-cover hover:scale-105 transition-transform duration-500"
                                         onError={(e) => {
                                             const target = e.currentTarget;
                                             const parent = target.parentElement as HTMLElement;
@@ -180,7 +184,7 @@ export default function EventDetails({ params }: { params: { id: string } }) {
                             </p>
                             <div className="flex p-4 bg-amber-50 rounded-xl border border-amber-200">
                                 <Info className="h-5 w-5 text-amber-600 mr-3 flex-shrink-0" />
-                                <p className="text-amber-800 text-xs font-medium">Please note that all ticket sales are final. Screenshots of QR codes are valid as long as they belong strictly to you and haven't been scanned prior.</p>
+                                <p className="text-amber-800 text-xs font-medium">Please note that all ticket sales are final. Screenshots of QR codes are valid as long as they belong strictly to you and haven&apos;t been scanned prior.</p>
                             </div>
                         </div>
                     </div>
