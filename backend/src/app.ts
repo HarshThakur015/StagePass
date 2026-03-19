@@ -8,6 +8,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import eventRoutes from "./modules/events/events.routes";
 import ticketRoutes from "./modules/tickets/tickets.routes";
 import adminRoutes from "./modules/admin/admin.routes";
+import paymentRoutes from "./modules/payment/payment.routes";
 
 // Import Global Error Handler
 import { globalErrorHandler } from "./middleware/errorMiddleware";
@@ -61,6 +62,9 @@ app.use("/api/tickets", ticketRoutes);
 
 // Admin Routes: handling system-wide metrics and user inspection
 app.use("/api/admin", adminRoutes);
+
+// Payment Routes: handling Stripe checkout and webhooks
+app.use("/api/payments", paymentRoutes);
 
 // 3. UNHANDLED ROUTES HANDLER
 // Catches requests to endpoints that do not exist
