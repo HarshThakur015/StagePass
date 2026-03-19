@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { format } from "date-fns";
 import { Calendar, MapPin, Users, Info, ChevronLeft, Ticket } from "lucide-react";
@@ -13,7 +13,6 @@ import Cookies from "js-cookie";
 
 export default function EventDetails({ params }: { params: { id: string } }) {
     const router = useRouter();
-    const queryClient = useQueryClient();
     const [quantity, setQuantity] = useState(1);
 
     // Check login state to decide UI flow (Buy vs Login)
@@ -31,25 +30,22 @@ export default function EventDetails({ params }: { params: { id: string } }) {
     // Purchase Mutation
     const purchaseMutation = useMutation({
         mutationFn: async () => {
-            const response = await api.post("/tickets/purchase", {
+            const response = await api.post("/payments/create-checkout-session", {
                 eventId: params.id,
                 quantity,
             });
             return response.data;
         },
         onSuccess: (data) => {
-            if (data.emailSent === false) {
-                toast.error("Tickets purchased and available in your dashboard, but we couldn't send the email.", { duration: 6000 });
+            if (data.url) {
+                window.location.href = data.url; // Redirect to Stripe Checkout
             } else {
-                toast.success(data.message);
+                toast.error("Failed to generate checkout session url");
             }
-            // Force refresh on My Tickets if they navigate to dashboard
-            queryClient.invalidateQueries({ queryKey: ["myTickets"] });
-            router.push("/dashboard");
         },
         onError: (err: unknown) => {
             const error = err as { response?: { data?: { message?: string } } };
-            toast.error(error.response?.data?.message || "Failed to purchase tickets");
+            toast.error(error.response?.data?.message || "Failed to initiate checkout");
         }
     });
 
