@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.*
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+
+# Docker (optional)
+docker-data/
+
+# AI / Tooling
+.agent/
+.gemini/
+.gsd/
+
+# Optional (if more appear later)
+*.local
+.cache/
