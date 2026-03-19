@@ -31,32 +31,6 @@ export const createCheckoutSession = async (req: Request, res: Response, next: N
             return next(new AppError("Event not found", 404));
         }
 
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ["card"],
-            line_items: [
-                {
-                    price_data: {
-                        currency: "inr", // Currency set to INR as requested
-                        product_data: {
-                            name: event.name || "Event Ticket",
-                            description: "StagePass Event Ticket",
-                        },
-                        // Enforce Stripe's minimum equivalent of 50 cents (~₹40.00)
-                        unit_amount: Math.max(Math.round(event.price * 100), 4000),
-                    },
-                    quantity: quantity,
-                },
-            ],
-            mode: "payment",
-            success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?success=true`,
-            cancel_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/events/${eventId}?canceled=true`,
-            metadata: {
-                eventId: event._id.toString(),
-                userId: userId.toString(),
-                quantity: quantity.toString(),
-            },
-        });
-
         // --- OPTIMISTIC BOOKING: Generate tickets & send email IMMEDIATELY ---
         // This ensures the user gets their tickets and email without needing a webhook!
         const ticketsToCreate = [];
@@ -83,6 +57,41 @@ export const createCheckoutSession = async (req: Request, res: Response, next: N
             await sendTicketEmail(userObj.email, savedTickets, event);
         }
         // ---------------------------------------------------------------------
+
+        // If the event is free, bypass Stripe entirely to avoid minimum charge errors
+        if (event.price === 0) {
+            return res.status(200).json({
+                success: true,
+                id: "free_event_" + Date.now(),
+                url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?success=true`
+            });
+        }
+
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            line_items: [
+                {
+                    price_data: {
+                        currency: "inr", // Currency set to INR as requested
+                        product_data: {
+                            name: event.name || "Event Ticket",
+                            description: "StagePass Event Ticket",
+                        },
+                        // Enforce Stripe's minimum equivalent of 50 cents (~₹40.00)
+                        unit_amount: Math.max(Math.round(event.price * 100), 4000),
+                    },
+                    quantity: quantity,
+                },
+            ],
+            mode: "payment",
+            success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?success=true`,
+            cancel_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/events/${eventId}?canceled=true`,
+            metadata: {
+                eventId: event._id.toString(),
+                userId: userId.toString(),
+                quantity: quantity.toString(),
+            },
+        });
 
         res.status(200).json({
             success: true,
