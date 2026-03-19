@@ -41,7 +41,8 @@ export const createCheckoutSession = async (req: Request, res: Response, next: N
                             name: event.name || "Event Ticket",
                             description: "StagePass Event Ticket",
                         },
-                        unit_amount: Math.round(event.price * 100), // Convert price to paise
+                        // Enforce Stripe's minimum equivalent of 50 cents (~₹40.00)
+                        unit_amount: Math.max(Math.round(event.price * 100), 4000),
                     },
                     quantity: quantity,
                 },
