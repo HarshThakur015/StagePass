@@ -36,7 +36,7 @@ export default function Navbar() {
 
             toast.success("Logged out successfully");
             router.push("/login"); // Redirect to login page
-        } catch (error) {
+        } catch {
             toast.error("Logout failed. Please try again.");
         }
     };

@@ -26,8 +26,10 @@ api.interceptors.request.use(
 // Setup Response Interceptor
 // Automatically attempts to refresh the token if an API request fails with 401 Unauthorized
 let isRefreshing = false;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let failedQueue: any[] = [];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const processQueue = (error: any, token: string | null = null) => {
     failedQueue.forEach((prom) => {
         if (error) {

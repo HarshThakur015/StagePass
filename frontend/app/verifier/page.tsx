@@ -9,8 +9,8 @@ import { useEffect } from "react";
 import toast from "react-hot-toast";
 
 export default function VerifierDashboard() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [scanResult, setScanResult] = useState<any>(null);
-    const [scanError, setScanError] = useState<string | null>(null);
 
     const validateMutation = useMutation({
         mutationFn: async (qrData: string) => {
@@ -25,6 +25,7 @@ export default function VerifierDashboard() {
             });
             toast.success(data.message);
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (err: any) => {
             setScanResult({
                 success: false,
@@ -45,12 +46,11 @@ export default function VerifierDashboard() {
         const onScanSuccess = (decodedText: string) => {
             // Prevent rapid consecutive scans while one is validating or we just showed a result
             if (!validateMutation.isPending && !scanResult) {
-                setScanError(null);
                 validateMutation.mutate(decodedText);
             }
         };
 
-        const onScanFailure = (error: any) => {
+        const onScanFailure = () => {
             // Usually fails constantly when no QR is in view, we ignore generic failures
         };
 
@@ -65,7 +65,6 @@ export default function VerifierDashboard() {
 
     const resetScanner = () => {
         setScanResult(null);
-        setScanError(null);
     };
 
     return (

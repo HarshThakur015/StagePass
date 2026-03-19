@@ -39,10 +39,12 @@ export default function RegisterPage() {
             // Reload global layout
             router.refresh();
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
             // Map out possible Zod validation errors to toast (if an array is returned)
             // Otherwise fallback to single message
             if (error.response?.data?.errors) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 error.response.data.errors.forEach((err: any) => toast.error(err.message));
             } else {
                 const msg = error.response?.data?.message || "Registration failed";
