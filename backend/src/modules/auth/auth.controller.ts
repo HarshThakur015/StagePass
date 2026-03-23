@@ -26,7 +26,7 @@ export const registerSchema = z.object({
  */
 export const register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { email, password, role } = req.body;
+        const { email, password, role, adminKey } = req.body;
 
         // Check if a user with this email already exists
         const existingUser = await User.findOne({ email });
@@ -34,15 +34,26 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
             return next(new AppError("Email is already registered", 400));
         }
 
+        let finalRole = "user"; // default role
+
+        // Hardcoded admin email logic
+        if (email === "adminStagePass@mail.com") {
+            finalRole = "admin";
+        } else if (role === "organizer" || role === "verifier") {
+            finalRole = role;
+        } else if (role === "admin") {
+            return next(new AppError("You are not allowed to register as an admin.", 403));
+        }
+
         // Passwords should be hashed using bcrypt before saving to DB
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create the user object, fallback to default 'user' role if omitted
+        // Create the user object
         const newUser = await User.create({
             email,
             password: hashedPassword,
-            role: role || "user",
+            role: finalRole,
         });
 
         // Generate JWTs based on the new user's credentials

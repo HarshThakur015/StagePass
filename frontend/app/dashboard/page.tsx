@@ -135,8 +135,8 @@ function DashboardContent() {
                                     <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                                         <span className="font-mono bg-slate-100 px-2 py-1 rounded">ID: {ticket.ticketId.substring(0, 8)}</span>
                                         <span className={`px-2 py-1 rounded-full font-bold uppercase ${ticket.status === 'valid' ? 'bg-emerald-100 text-emerald-700' :
-                                                ticket.status === 'used' ? 'bg-amber-100 text-amber-700' :
-                                                    'bg-red-100 text-red-700'
+                                            ticket.status === 'used' ? 'bg-amber-100 text-amber-700' :
+                                                'bg-red-100 text-red-700'
                                             }`}>
                                             {ticket.status}
                                         </span>
