@@ -31,31 +31,6 @@ export const createCheckoutSession = async (req: Request, res: Response, next: N
             return next(new AppError("Event not found", 404));
         }
 
-        // --- OPTIMISTIC BOOKING: Generate tickets & send email IMMEDIATELY ---
-        // This ensures the user gets their tickets and email without needing a webhook!
-        const ticketsToCreate = [];
-        const timestamp = Date.now().toString();
-
-        for (let i = 0; i < quantity; i++) {
-            const ticketId = crypto.randomBytes(8).toString("hex");
-            const qrData = generateQRData({ ticketId, eventId, userId: userId.toString(), timestamp });
-
-            ticketsToCreate.push({
-                ticketId,
-                eventId,
-                userId,
-                qrData,
-                status: "valid", 
-            });
-        }
-
-        const savedTickets = await Ticket.insertMany(ticketsToCreate);
-
-        const userObj = await User.findById(userId);
-        if (userObj && userObj.email) {
-            console.log(`[Email Debug] Dispatching optimistic email to ${userObj.email}`);
-            await sendTicketEmail(userObj.email, savedTickets, event);
-        }
         // ---------------------------------------------------------------------
 
         // If the event is free, bypass Stripe entirely to avoid minimum charge errors
@@ -84,7 +59,7 @@ export const createCheckoutSession = async (req: Request, res: Response, next: N
                 },
             ],
             mode: "payment",
-            success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?success=true`,
+            success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/events/${eventId}?canceled=true`,
             metadata: {
                 eventId: event._id.toString(),
@@ -120,8 +95,108 @@ export const stripeWebhook = async (req: Request, res: Response, next: NextFunct
 
     if (eventStripe.type === "checkout.session.completed") {
         const session = eventStripe.data.object as any;
-        console.log(`[Webhook] Payment successful for session ${session.id}! Tickets were already issued optimistically.`);
+        console.log(`[Webhook] Payment successful for session ${session.id}!`);
+
+        const { eventId, userId, quantity } = session.metadata;
+
+        try {
+            // Idempotency: skip if already processed synchronously by frontend
+            const existingTickets = await Ticket.find({ stripeSessionId: session.id });
+            if (existingTickets.length > 0) {
+                console.log(`[Webhook] Tickets already exist for session ${session.id}, skipping regeneration.`);
+                return res.status(200).json({ received: true });
+            }
+
+            const event = await Event.findById(eventId);
+            if (!event) throw new Error("Event not found in webhook process");
+
+            const ticketsToCreate = [];
+            const timestamp = Date.now().toString();
+            const numTickets = parseInt(quantity, 10);
+
+            for (let i = 0; i < numTickets; i++) {
+                const ticketId = crypto.randomBytes(8).toString("hex");
+                const qrData = generateQRData({ ticketId, eventId, userId, timestamp });
+
+                ticketsToCreate.push({
+                    ticketId,
+                    eventId,
+                    userId,
+                    qrData,
+                    status: "valid",
+                    stripeSessionId: session.id
+                });
+            }
+
+            const savedTickets = await Ticket.insertMany(ticketsToCreate);
+            const userObj = await User.findById(userId);
+
+            if (userObj && userObj.email) {
+                console.log(`[Email Debug] Dispatching post-payment email to ${userObj.email}`);
+                await sendTicketEmail(userObj.email, savedTickets, event);
+            }
+        } catch (error) {
+            console.error("[Webhook Error] Failed to generate tickets:", error);
+        }
     }
 
     res.status(200).json({ received: true });
+};
+
+export const verifySession = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { sessionId } = req.body;
+        const userId = req.user?._id || req.user?.id;
+
+        if (!userId) return next(new AppError("User not authenticated", 401));
+        if (!sessionId) return next(new AppError("Session ID is required", 400));
+
+        // Idempotency check: see if tickets for this session already exist
+        const existingTickets = await Ticket.find({ stripeSessionId: sessionId });
+        if (existingTickets.length > 0) {
+            return res.status(200).json({ success: true, message: "Tickets already issued", data: existingTickets });
+        }
+
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        if (!session || session.payment_status !== "paid") {
+            return next(new AppError("Payment not completed or session not found", 400));
+        }
+
+        const metadata = session.metadata;
+        if (!metadata) return next(new AppError("Session missing metadata", 400));
+        const { eventId, quantity } = metadata;
+
+        const event = await Event.findById(eventId);
+        if (!event) return next(new AppError("Event not found", 404));
+
+        const ticketsToCreate = [];
+        const timestamp = Date.now().toString();
+        const numTickets = parseInt(quantity, 10);
+
+        for (let i = 0; i < numTickets; i++) {
+            const ticketId = crypto.randomBytes(8).toString("hex");
+            const qrData = generateQRData({ ticketId, eventId, userId: userId.toString(), timestamp });
+
+            ticketsToCreate.push({
+                ticketId,
+                eventId,
+                userId: userId.toString(),
+                qrData,
+                status: "valid",
+                stripeSessionId: sessionId
+            });
+        }
+
+        const savedTickets = await Ticket.insertMany(ticketsToCreate);
+        const userObj = await User.findById(userId);
+
+        if (userObj && userObj.email) {
+            console.log(`[Email Debug] Dispatching post-payment email to ${userObj.email} via verifySession`);
+            await sendTicketEmail(userObj.email, savedTickets, event);
+        }
+
+        res.status(200).json({ success: true, message: "Tickets generated successfully", data: savedTickets });
+    } catch (error) {
+        next(error);
+    }
 };

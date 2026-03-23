@@ -7,6 +7,7 @@ export interface ITicket extends Document {
     userId: mongoose.Types.ObjectId;
     status: "valid" | "used" | "expired";
     qrData: string; // The data string embedded in the QR Code
+    stripeSessionId?: string; // Stripe Checkout Session ID for synchronous generation idempotency
     usedAt?: Date; // Timestamp when the ticket was successfully scanned/validated
     createdAt: Date;
     updatedAt: Date;
@@ -45,6 +46,10 @@ const TicketSchema: Schema = new Schema(
             type: String,
             required: [true, "QR Data is required"],
             unique: true,
+        },
+        // The Stripe session ID used to securely authorize this ticket
+        stripeSessionId: {
+            type: String,
         },
         // Recorded when the ticket status changes to 'used'
         usedAt: {

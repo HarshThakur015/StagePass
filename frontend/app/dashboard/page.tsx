@@ -5,6 +5,9 @@ import { api } from "@/lib/axios";
 import { format } from "date-fns";
 import { Ticket as TicketIcon } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useSearchParams, useRouter } from "next/navigation";
+import React, { useEffect, useState, Suspense } from "react";
+import toast from "react-hot-toast";
 
 interface TicketData {
     _id: string;
@@ -22,8 +25,22 @@ interface TicketData {
 }
 
 export default function UserDashboard() {
+    return (
+        <Suspense fallback={<div className="text-center mt-32 text-indigo-600 animate-pulse">Loading dashboard...</div>}>
+            <DashboardContent />
+        </Suspense>
+    );
+}
+
+function DashboardContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const sessionId = searchParams.get("session_id");
+    const [isVerifying, setIsVerifying] = useState(!!sessionId);
+    const hasVerified = React.useRef(false);
+
     // Fetch user's tickets
-    const { data, isLoading, isError } = useQuery({
+    const { data, isLoading, isError, refetch } = useQuery({
         queryKey: ["myTickets"],
         queryFn: async () => {
             const response = await api.get("/tickets/my-tickets");
@@ -31,8 +48,36 @@ export default function UserDashboard() {
         },
     });
 
-    if (isLoading) {
-        return <div className="text-center mt-20 text-indigo-600 font-medium animate-pulse">Loading your tickets...</div>;
+    useEffect(() => {
+        if (sessionId && !hasVerified.current) {
+            hasVerified.current = true;
+            const verifyPayment = async () => {
+                try {
+                    await api.post("/payments/verify-session", { sessionId });
+                    toast.success("Payment verified and tickets magically generated!");
+                    router.replace("/dashboard", { scroll: false });
+                    refetch();
+                } catch (error) {
+                    console.error("Verification failed", error);
+                    toast.error("There was an issue verifying your payment.");
+                    router.replace("/dashboard", { scroll: false });
+                } finally {
+                    setIsVerifying(false);
+                }
+            };
+            verifyPayment();
+        }
+    }, [sessionId, router, refetch]);
+
+    if (isVerifying || isLoading) {
+        return (
+            <div className="text-center mt-32 space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                <div className="text-indigo-600 font-medium animate-pulse tracking-wide">
+                    {isVerifying ? "Verifying payment seamlessly & generating secure tickets..." : "Loading your tickets..."}
+                </div>
+            </div>
+        );
     }
 
     if (isError) {
